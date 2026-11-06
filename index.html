@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Simulador académico del enfriamiento de equipos informáticos mediante EDO, Heun y RK4.">
+  <title>Simulador de enfriamiento | Métodos Numéricos</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top app-navbar">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#inicio">
+        <i class="bi bi-cpu me-2"></i>ThermoSys
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir navegación">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="menuPrincipal">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item"><a class="nav-link" href="#modelo">Modelo</a></li>
+          <li class="nav-item"><a class="nav-link" href="#simulador">Simulador</a></li>
+          <li class="nav-item"><a class="nav-link" href="#resultados">Resultados</a></li>
+          <li class="nav-item"><a class="nav-link" href="#historial">Base de datos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#acerca">Acerca del proyecto</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header id="inicio" class="hero-section">
+    <div class="container hero-content">
+      <div class="hero-kicker"><span class="pulse-dot"></span> PROYECTO DE MÉTODOS NUMÉRICOS</div>
+      <h1>Enfriamiento de equipos informáticos</h1>
+      <p class="hero-subtitle">Modelado matemático de la temperatura de un equipo después de una jornada de trabajo mediante ecuaciones diferenciales ordinarias.</p>
+      <a href="#simulador" class="btn btn-light btn-lg fw-semibold mt-3">Iniciar simulación <i class="bi bi-arrow-right ms-2"></i></a>
+      <div class="hero-equation">
+        <span class="equation-label">LEY DE ENFRIAMIENTO DE NEWTON</span>
+        <span class="equation">dT/dt = −k (T − T<sub>a</sub>)</span>
+      </div>
+    </div>
+    <div class="hero-orb orb-one"></div>
+    <div class="hero-orb orb-two"></div>
+  </header>
+
+  <!-- Información académica solicitada -->
+  <section class="academic-strip">
+    <div class="container">
+      <div class="row g-3">
+        <div class="col-md-5"><i class="bi bi-person-badge"></i><span>Estudiante: <strong>Conde Gutierrez Rafael Blas</strong></span></div>
+        <div class="col-md-4"><i class="bi bi-journal-code"></i><span><strong>COM-254 Métodos Numéricos</strong></span></div>
+        <div class="col-md-3"><i class="bi bi-calendar3"></i><span><strong>II - 2026</strong></span></div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section class="section-block" id="problema">
+      <div class="container">
+        <div class="section-heading">
+          <span class="section-eyebrow">01 / PLANTEAMIENTO</span>
+          <h2>El problema que queremos estudiar</h2>
+          <p>Al finalizar una jornada de trabajo, los equipos informáticos pueden conservar temperaturas superiores a la temperatura del ambiente. Conocer cómo disminuye esa temperatura ayuda a comprender el comportamiento térmico del equipo y a estimar el tiempo necesario para alcanzar un nivel determinado.</p>
+        </div>
+        <div class="row g-4 align-items-stretch">
+          <div class="col-lg-7">
+            <div class="content-card h-100">
+              <h3><i class="bi bi-question-circle me-2"></i>Pregunta del desafío</h3>
+              <p class="lead-question">¿Cuánto tiempo necesita un equipo informático para enfriarse desde una temperatura inicial hasta una temperatura objetivo, y qué tan precisos son los métodos de Heun y RK4 al aproximar ese proceso?</p>
+              <hr>
+              <h3><i class="bi bi-bullseye me-2"></i>Objetivo</h3>
+              <p>Simular la evolución de la temperatura de un equipo después de finalizar su actividad, comparar dos métodos numéricos con la solución analítica y cuantificar sus errores para distintos tamaños de paso.</p>
+              <h3 class="mt-4"><i class="bi bi-people me-2"></i>Beneficiarios</h3>
+              <p>Estudiantes, laboratorios universitarios y responsables de salas de cómputo o centros de datos que deseen comprender el comportamiento térmico de sus equipos.</p>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="visual-card h-100">
+              <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1000&q=85" alt="Gabinete de servidores en un centro de datos" class="server-image">
+              <div class="visual-caption">
+                <span class="caption-icon"><i class="bi bi-thermometer-half"></i></span>
+                <div><strong>Variable de estudio</strong><small>Temperatura del equipo en función del tiempo</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="assumption-note mt-4">
+          <i class="bi bi-info-circle-fill"></i>
+          <div><strong>Alcance del modelo:</strong> se supone que la temperatura ambiente permanece constante y que el enfriamiento puede aproximarse mediante una constante proporcional. Es un modelo simplificado; no representa todos los fenómenos de ventilación, carga térmica o control inteligente de ventiladores de un equipo real.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block section-muted" id="modelo">
+      <div class="container">
+        <div class="section-heading">
+          <span class="section-eyebrow">02 / FUNDAMENTO MATEMÁTICO</span>
+          <h2>Modelo diferencial</h2>
+          <p>La ley de enfriamiento de Newton establece que la rapidez de cambio de la temperatura es proporcional a la diferencia entre la temperatura del cuerpo y la del ambiente.</p>
+        </div>
+        <div class="equation-panel">
+          <div class="equation-main">T′(t) = −k [T(t) − T<sub>a</sub>]</div>
+          <div class="equation-initial">Condición inicial: T(0) = T<sub>0</sub></div>
+        </div>
+        <div class="row g-3 mt-3">
+          <div class="col-sm-6 col-lg-3"><div class="parameter-card"><span>T(t)</span><strong>Temperatura del equipo</strong><small>°C</small></div></div>
+          <div class="col-sm-6 col-lg-3"><div class="parameter-card"><span>T<sub>a</sub></span><strong>Temperatura ambiente</strong><small>°C</small></div></div>
+          <div class="col-sm-6 col-lg-3"><div class="parameter-card"><span>k</span><strong>Constante de enfriamiento</strong><small>min⁻¹</small></div></div>
+          <div class="col-sm-6 col-lg-3"><div class="parameter-card"><span>t</span><strong>Tiempo transcurrido</strong><small>minutos</small></div></div>
+        </div>
+        <div class="row g-4 mt-3">
+          <div class="col-lg-6">
+            <div class="content-card h-100">
+              <h3>Solución analítica</h3>
+              <p>Separando variables e integrando, se obtiene:</p>
+              <div class="formula-box">T(t) = T<sub>a</sub> + (T<sub>0</sub> − T<sub>a</sub>) e<sup>−kt</sup></div>
+              <p class="mb-0">Esta expresión es la solución exacta del modelo planteado. Se utilizará como referencia para calcular los errores de los métodos numéricos.</p>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="content-card h-100">
+              <h3>Verificación</h3>
+              <p>Derivando la solución analítica:</p>
+              <div class="formula-box">T′(t) = −k(T<sub>0</sub> − T<sub>a</sub>)e<sup>−kt</sup></div>
+              <p>Como T(t) − T<sub>a</sub> = (T<sub>0</sub> − T<sub>a</sub>)e<sup>−kt</sup>, entonces:</p>
+              <div class="formula-box formula-success">T′(t) = −k[T(t) − T<sub>a</sub>]</div>
+              <p class="mb-0">Además, T(0) = T<sub>a</sub> + (T<sub>0</sub> − T<sub>a</sub>) = T<sub>0</sub>. Se cumplen la EDO y la condición inicial.</p>
+            </div>
+          </div>
+        </div>
+        <div class="assumption-note mt-4">
+          <i class="bi bi-rulers"></i>
+          <div><strong>Supuestos y unidades:</strong> k es constante y positiva; T<sub>0</sub> es mayor o igual que T<sub>a</sub>; el tiempo se expresa en minutos y las temperaturas en grados Celsius. Los parámetros iniciales son valores hipotéticos de demostración y deben sustituirse por mediciones si se realiza un ensayo físico.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block" id="metodos">
+      <div class="container">
+        <div class="section-heading">
+          <span class="section-eyebrow">03 / MÉTODOS NUMÉRICOS</span>
+          <h2>Heun y Runge-Kutta de cuarto orden</h2>
+          <p>Los dos métodos aproximan la solución de la EDO paso a paso. Se ejecutan con los mismos parámetros, condición inicial e intervalo de simulación.</p>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="method-card">
+              <div class="method-number">02</div>
+              <h3>Método de Heun</h3>
+              <p>También conocido como Runge-Kutta de segundo orden. Calcula una pendiente inicial y otra pendiente predictora; utiliza el promedio de ambas.</p>
+              <div class="method-formula">k<sub>1</sub> = f(t<sub>n</sub>, y<sub>n</sub>)</div>
+              <div class="method-formula">k<sub>2</sub> = f(t<sub>n</sub> + h, y<sub>n</sub> + hk<sub>1</sub>)</div>
+              <div class="method-formula">y<sub>n+1</sub> = y<sub>n</sub> + (h/2)(k<sub>1</sub> + k<sub>2</sub>)</div>
+              <span class="method-tag">Orden de precisión: 2</span>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="method-card method-rk">
+              <div class="method-number">04</div>
+              <h3>Runge-Kutta clásico (RK4)</h3>
+              <p>Calcula cuatro pendientes en distintos puntos del intervalo y las combina mediante un promedio ponderado.</p>
+              <div class="method-formula">k<sub>1</sub> = f(t<sub>n</sub>, y<sub>n</sub>)</div>
+              <div class="method-formula">k<sub>2</sub> = f(t<sub>n</sub> + h/2, y<sub>n</sub> + hk<sub>1</sub>/2)</div>
+              <div class="method-formula">k<sub>3</sub> = f(t<sub>n</sub> + h/2, y<sub>n</sub> + hk<sub>2</sub>/2)</div>
+              <div class="method-formula">k<sub>4</sub> = f(t<sub>n</sub> + h, y<sub>n</sub> + hk<sub>3</sub>)</div>
+              <div class="method-formula">y<sub>n+1</sub> = y<sub>n</sub> + (h/6)(k<sub>1</sub> + 2k<sub>2</sub> + 2k<sub>3</sub> + k<sub>4</sub>)</div>
+              <span class="method-tag">Orden de precisión: 4</span>
+            </div>
+          </div>
+        </div>
+        <div class="content-card mt-4">
+          <h3>Medición del error</h3>
+          <div class="row g-3">
+            <div class="col-md-6"><div class="formula-box">Error absoluto = |T<sub>exacta</sub> − T<sub>numérica</sub>|</div></div>
+            <div class="col-md-6"><div class="formula-box">Error relativo (%) = (Error absoluto / |T<sub>exacta</sub>|) × 100</div></div>
+          </div>
+          <p class="small text-secondary mb-0">Cuando la solución exacta es cero, el error relativo porcentual no se calcula y se muestra como “No definido”.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block section-muted" id="simulador">
+      <div class="container">
+        <div class="section-heading">
+          <span class="section-eyebrow">04 / LABORATORIO INTERACTIVO</span>
+          <h2>Configurar simulación</h2>
+          <p>Modifica los valores de entrada y ejecuta el cálculo. La aplicación compara automáticamente el tamaño de paso seleccionado con un segundo ensayo de paso h/2.</p>
+        </div>
+        <div class="simulator-layout">
+          <form id="simulationForm" class="content-card simulator-form" novalidate>
+            <div class="form-title"><i class="bi bi-sliders"></i><div><h3>Parámetros de entrada</h3><small>Configura las condiciones del equipo</small></div></div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="t0" class="form-label">Temperatura inicial T₀ (°C)</label>
+                <input type="number" class="form-control" id="t0" value="75" min="-50" max="200" step="0.1" required>
+                <div class="form-text">Temperatura al finalizar la jornada.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="ta" class="form-label">Temperatura ambiente Tₐ (°C)</label>
+                <input type="number" class="form-control" id="ta" value="22" min="-50" max="60" step="0.1" required>
+                <div class="form-text">Se considera constante.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="k" class="form-label">Constante k (min⁻¹)</label>
+                <input type="number" class="form-control" id="k" value="0.035" min="0.0001" max="2" step="0.001" required>
+                <div class="form-text">Debe ser positiva.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="duration" class="form-label">Tiempo de simulación (min)</label>
+                <input type="number" class="form-control" id="duration" value="120" min="1" max="10000" step="1" required>
+              </div>
+              <div class="col-md-6">
+                <label for="step" class="form-label">Tamaño de paso h (min)</label>
+                <input type="number" class="form-control" id="step" value="10" min="0.01" max="1000" step="0.1" required>
+                <div class="form-text">El segundo ensayo utilizará h/2.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="target" class="form-label">Temperatura objetivo (°C)</label>
+                <input type="number" class="form-control" id="target" value="30" step="0.1" required>
+                <div class="form-text">Debe estar entre Tₐ y T₀.</div>
+              </div>
+              <div class="col-12">
+                <label for="testName" class="form-label">Nombre del ensayo (opcional)</label>
+                <input type="text" class="form-control" id="testName" maxlength="70" placeholder="Ej. Servidor del laboratorio - prueba 1">
+              </div>
+            </div>
+            <div id="validationMessage" class="validation-message d-none" role="alert"></div>
+            <div class="d-grid d-sm-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-play-fill me-1"></i> Ejecutar simulación</button>
+              <button type="button" id="resetButton" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise me-1"></i> Restablecer</button>
+            </div>
+            <div class="d-grid mt-2">
+              <button type="button" id="saveButton" class="btn btn-outline-primary" disabled><i class="bi bi-database-add me-1"></i> Guardar este ensayo</button>
+            </div>
+            <p class="storage-hint mt-3 mb-0"><i class="bi bi-shield-check me-1"></i> Los ensayos se guardan localmente en este navegador mediante IndexedDB.</p>
+          </form>
+
+          <div class="simulator-side">
+            <div class="side-info-card">
+              <span class="side-icon"><i class="bi bi-thermometer-sun"></i></span>
+              <h3>¿Qué representa la simulación?</h3>
+              <p>El equipo comienza a enfriarse en t = 0. La diferencia entre su temperatura y la temperatura ambiente disminuye progresivamente.</p>
+              <div class="mini-stat"><span>Condición inicial</span><strong>T(0) = T₀</strong></div>
+              <div class="mini-stat"><span>Estado de equilibrio</span><strong>T(t) → Tₐ</strong></div>
+            </div>
+            <div class="side-info-card side-dark">
+              <i class="bi bi-lightbulb fs-3"></i>
+              <h3>¿Qué debes observar?</h3>
+              <ul>
+                <li>La temperatura debe aproximarse a la ambiental.</li>
+                <li>RK4 suele presentar menor error con el mismo paso.</li>
+                <li>Al reducir h, normalmente mejora la aproximación numérica.</li>
+              </ul>
+              <small>Son comportamientos esperados para este modelo; deben verificarse en cada ensayo.</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block" id="resultados">
+      <div class="container">
+        <div class="section-heading">
+          <span class="section-eyebrow">05 / RESULTADOS</span>
+          <h2>Análisis de la simulación</h2>
+          <p id="resultStatus">Ejecuta una simulación para visualizar los resultados numéricos.</p>
+        </div>
+        <div class="row g-3 mb-4" id="summaryCards">
+          <div class="col-sm-6 col-xl-3"><div class="metric-card"><span>Temperatura inicial</span><strong>—</strong><small>°C</small></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="metric-card"><span>Temperatura final exacta</span><strong>—</strong><small>°C</small></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="metric-card"><span>Tiempo hasta objetivo</span><strong>—</strong><small>minutos</small></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="metric-card"><span>Menor error final</span><strong>—</strong><small>método</small></div></div>
+        </div>
+
+        <div class="content-card mb-4">
+          <div class="chart-heading"><div><h3>Evolución de la temperatura</h3><p>Solución analítica frente a Heun y RK4 con paso h.</p></div><span class="chart-unit">Temperatura (°C)</span></div>
+          <div class="chart-wrap"><canvas id="temperatureChart" aria-label="Gráfica de temperatura contra tiempo"></canvas></div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-lg-6">
+            <div class="content-card h-100">
+              <div class="chart-heading"><div><h3>Comparación de errores</h3><p>Error absoluto final para h y h/2.</p></div></div>
+              <div class="chart-wrap chart-small"><canvas id="errorChart" aria-label="Gráfica de errores absolutos"></canvas></div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="content-card h-100">
+              <h3>Interpretación automática</h3>
+              <div id="interpretation" class="interpretation-box">Los resultados y su interpretación aparecerán aquí después de ejecutar una simulación.</div>
+              <div class="target-result mt-3" id="targetResult">Tiempo estimado para alcanzar la temperatura objetivo: —</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-card mb-4">
+          <div class="table-heading">
+            <div><h3>Tabla de iteraciones</h3><p>Valores para el tamaño de paso h seleccionado.</p></div>
+            <button class="btn btn-sm btn-outline-primary" id="downloadCsv" disabled><i class="bi bi-filetype-csv me-1"></i> Descargar CSV</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle result-table">
+              <thead><tr><th>n</th><th>Tiempo (min)</th><th>Analítica (°C)</th><th>Heun (°C)</th><th>RK4 (°C)</th><th>Error abs. Heun</th><th>Error abs. RK4</th></tr></thead>
+              <tbody id="iterationTable"><tr><td colspan="7" class="empty-row">No hay resultados. Ejecuta una simulación.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <div class="table-heading"><div><h3>Comparación de tamaños de paso</h3><p>Errores absolutos y relativos porcentuales en el tiempo final.</p></div></div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle result-table">
+              <thead><tr><th>Paso</th><th>Método</th><th>Temperatura final (°C)</th><th>Error absoluto (°C)</th><th>Error relativo (%)</th></tr></thead>
+              <tbody id="stepComparison"><tr><td colspan="5" class="empty-row">Ejecuta una simulación para comparar h y h/2.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block section-muted" id="historial">
+      <div class="container">
+        <div class="section-heading">
+          <span class="section-eyebrow">06 / PERSISTENCIA DE DATOS</span>
+          <h2>Base de datos de ensayos</h2>
+          <p>Guarda las configuraciones experimentales, recupéralas para repetir una simulación y consulta el historial de pruebas almacenadas en este navegador.</p>
+        </div>
+        <div class="database-banner">
+          <div class="database-icon"><i class="bi bi-database-check"></i></div>
+          <div class="flex-grow-1"><strong>Base de datos local: ThermoSysDB</strong><p class="mb-0">Almacenamiento persistente mediante IndexedDB. No requiere servidor ni conexión para guardar los ensayos.</p></div>
+          <span class="db-status" id="dbStatus"><span></span> Conectando...</span>
+        </div>
+        <div class="content-card mt-4">
+          <div class="table-heading">
+            <div><h3>Ensayos guardados</h3><p id="historyCount">0 registros almacenados</p></div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle result-table">
+              <thead><tr><th>Nombre del ensayo</th><th>Fecha</th><th>T₀ / Tₐ (°C)</th><th>k (min⁻¹)</th><th>Duración / h (min)</th><th>Acciones</th></tr></thead>
+              <tbody id="historyTable"><tr><td colspan="6" class="empty-row">Cargando registros...</td></tr></tbody>
+            </table>
+          </div>
+          <div class="history-actions">
+            <button class="btn btn-outline-primary btn-sm" id="exportDatabase"><i class="bi bi-download me-1"></i> Exportar respaldo JSON</button>
+            <label class="btn btn-outline-secondary btn-sm mb-0" for="importDatabase"><i class="bi bi-upload me-1"></i> Importar respaldo JSON</label>
+            <input type="file" id="importDatabase" accept=".json,application/json" class="visually-hidden">
+            <button class="btn btn-outline-danger btn-sm ms-auto" id="clearDatabase"><i class="bi bi-trash3 me-1"></i> Eliminar todos</button>
+          </div>
+          <p class="small text-secondary mt-3 mb-0">Nota: los datos pertenecen al navegador y dispositivo donde se guardaron. Para conservarlos o trasladarlos, utiliza la opción de exportación JSON.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block" id="acerca">
+      <div class="container">
+        <div class="section-heading">
+          <span class="section-eyebrow">07 / CIERRE DEL DESAFÍO</span>
+          <h2>Conclusiones y limitaciones</h2>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="content-card h-100">
+              <h3><i class="bi bi-check2-circle me-2 text-success"></i>Conclusiones que permite obtener</h3>
+              <ul class="conclusion-list">
+                <li>La temperatura del equipo se aproxima a la temperatura ambiente conforme transcurre el tiempo.</li>
+                <li>La comparación con la solución analítica permite cuantificar la precisión de Heun y RK4.</li>
+                <li>El tamaño de paso influye en el error de las aproximaciones numéricas.</li>
+                <li>El historial permite repetir experimentos y comparar configuraciones.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="content-card h-100">
+              <h3><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Limitaciones del modelo</h3>
+              <ul class="conclusion-list">
+                <li>La temperatura ambiente se considera constante.</li>
+                <li>La constante k no cambia durante el enfriamiento.</li>
+                <li>No se modelan por separado CPU, GPU, fuente de alimentación ni otros componentes.</li>
+                <li>No se consideran cambios de ventilación, humedad, ubicación ni geometría del equipo.</li>
+                <li>Los parámetros de ejemplo son hipotéticos y no sustituyen mediciones experimentales.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="final-question mt-4">
+          <span>Pregunta guía</span>
+          <h3>¿Cómo puede una ecuación diferencial de primer orden ayudarnos a comprender el enfriamiento de un equipo informático, y qué tan precisas son las aproximaciones de Heun y RK4?</h3>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
+      <span><i class="bi bi-cpu me-2"></i>ThermoSys · Simulador de enfriamiento</span>
+      <span>COM-254 Métodos Numéricos · II - 2026</span>
+    </div>
+  </footer>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="appToast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+      <div class="toast-header"><i class="bi bi-info-circle-fill text-primary me-2"></i><strong class="me-auto">ThermoSys</strong><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar"></button></div>
+      <div class="toast-body" id="toastMessage">Mensaje</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
